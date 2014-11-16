@@ -24,8 +24,10 @@ private:
 
     bool _isTouched;          // 当前被点击的状态 : 默认初始化为false
     bool _isMoved;            // 当前寿司是否被移动过
+    bool _isAction;           // 当前是否存在有单一寿司在执行动作判断阀值
     Element* touch_element;       // 当前被点击到的精灵 : 默认初始化为NULL
     Element* touch_after_element; // 当前被移动的精灵 : 默认初始化为NULL
+    
 public:
     HelloWorld();
     virtual~ HelloWorld();
@@ -50,6 +52,13 @@ public:
     virtual void global_touch_end(Touch* t, Event* e);
     virtual Element* user_click_sushi(Vec2*);           // 检测点选寿司存在
     virtual void swap_sushi(Element*, Element*);        // 交换寿司
+    
+// 全局定时器及逻辑部分
+public:
+    virtual void update(float dtime) override;
+    virtual void check_global_sushi();          // 检查全局是否有需要消除的状态
+    virtual void col_check_sushi(Element*, std::vector<Element*>&);     // 向右检查
+    virtual void row_check_sushi(Element*, std::vector<Element*>&);     // 向上检查
 };
 
 #endif // __HELLOWORLD_SCENE_H__

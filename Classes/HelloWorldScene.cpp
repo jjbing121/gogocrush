@@ -6,6 +6,7 @@ USING_NS_CC;
 HelloWorld::HelloWorld() :
     _isTouched(false),
     _isMoved(false),
+    _isAction(false),
     touch_element(NULL),
     touch_after_element(NULL)
 {
@@ -68,6 +69,7 @@ bool HelloWorld::init()
     
     // 5. 整体初始化这个2维矩阵
     init_vec2_element();
+    scheduleUpdate();
     
     // 6. 初始化所有的触摸动作
     auto listener = EventListenerTouchOneByOne::create();
@@ -229,4 +231,98 @@ bool HelloWorld::init()
     e_after->runAction(Sequence::create(
                                         MoveTo::create(0.5, e_before_position),
                                         NULL));
+}
+
+/*virtual*/ void HelloWorld::update(float dtime)
+{
+    if (!_isAction) {
+        _isAction = true;
+        // 遍历所有的寿司，查看寿司是否有运动状态在
+        for (int i=1; i<=ELEMENT_COLUMN; i++) {
+            for (int j=1; j<=ELEMENT_ROW; j++) {
+                Element* judge_element = vector_element[_element_row*(i-1)+(j-1)];
+                if (judge_element != NULL && judge_element->getNumberOfRunningActions() > 0) {
+                    _isAction = false;
+                    break;
+                }
+            }
+            break;
+        }
+        return;
+    }
+    
+    // 判断到没有寿司在执行其他动作的情况下 => _isAction=true;
+    _isTouched = !_isAction; // 触发可以移动的状态
+    
+    // 触发状态使用的递归方式
+    check_global_sushi();
+    return;
+}
+
+/*virtual*/ void HelloWorld::check_global_sushi()
+{
+    for (int i=1; i<=ELEMENT_COLUMN; i++) {
+        for (int j=1; j<=ELEMENT_ROW; j++) {
+            // 单一元素只向右和向上匹配
+            Element* check_element = vector_element[_element_row * (i-1) + (j-1)];
+            
+            // 向右检测
+            std::vector<Element*> col_list;
+            this->col_check_sushi(check_element, col_list);
+            
+            // 向上检测
+            std::vector<Element*> row_list;
+            this->row_check_sushi(check_element, row_list);
+            
+            // 判断哪个方向是正确的方向 -> 保存在sure_list中
+            std::vector<Element*> &sure_list = col_list.size() > row_list.size() ? col_list : row_list;
+            // 根据判断来进行消除动作
+            if (sure_list.size() >= 3) {
+                for (int each_element = 0; each_element<sure_list.size(); each_element++) {
+//                    Element* tmp_element = sure_list[each_element];
+                    log("{%d, %d => %d}", sure_list[each_element]->getROW(), sure_list[each_element]->getCOLUMN(), _element_row*(sure_list[each_element]->getROW()-1) + (sure_list[each_element]->getCOLUMN()-1));
+                }
+            }
+        }
+    }
+}
+
+/*virtual*/ void HelloWorld::row_check_sushi(Element* check_element, std::vector<Element*>& col_list)
+{
+    // 主动放入第一个元素
+    col_list.push_back(check_element);
+    
+    // 获取当前元素的row 和 col值
+    int row = check_element->getROW();
+    int col = check_element->getCOLUMN();
+    
+    // 开始向上匹配index值
+    for (int i = col; i<_element_row; i++) {
+        Element* up_element = vector_element[_element_row * (row-1) + ((i-1)+1)];
+        if (up_element && check_element->getINDEX() == up_element->getINDEX()) {
+            col_list.push_back(up_element);
+        }
+        else
+            return;
+    }
+}
+
+/*virtual*/ void HelloWorld::col_check_sushi(Element* check_element, std::vector<Element*>& row_list)
+{
+    // 主动放入第一个元素
+    row_list.push_back(check_element);
+    
+    // 获取当前元素的row 和 col值
+    int row = check_element->getROW();
+    int col = check_element->getCOLUMN();
+
+    // 开始向右匹配index值
+    for (int i = row; i<_element_column; i++) {
+        Element* right_element = vector_element[_element_row * ((i-1)+1) + (col-1)];
+        if (right_element && check_element->getINDEX() == right_element->getINDEX()) {
+            row_list.push_back(right_element);
+        }
+        else
+            return;
+    }
 }
