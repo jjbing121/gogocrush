@@ -2,6 +2,16 @@
 #include "ElementSushi.h"
 
 USING_NS_CC;
+
+HelloWorld::HelloWorld() :
+    _isTouched(false),
+    _isMoved(false),
+    touch_element(NULL),
+    touch_after_element(NULL)
+{
+
+}
+
 HelloWorld::~HelloWorld()
 {
     if (vector_element) {
@@ -59,6 +69,13 @@ bool HelloWorld::init()
     // 5. 整体初始化这个2维矩阵
     init_vec2_element();
     
+    // 6. 初始化所有的触摸动作
+    auto listener = EventListenerTouchOneByOne::create();
+    listener->setSwallowTouches(true);
+    listener->onTouchBegan = CC_CALLBACK_2(HelloWorld::global_touch_on, this);
+    listener->onTouchMoved = CC_CALLBACK_2(HelloWorld::global_touch_move, this);
+    listener->onTouchEnded = CC_CALLBACK_2(HelloWorld::global_touch_end, this);
+    Director::getInstance()->getEventDispatcher()->addEventListenerWithSceneGraphPriority(listener, this);
     return true;
     
 }
@@ -75,10 +92,18 @@ bool HelloWorld::init()
 /*virtual*/ void HelloWorld::create_each_doaction(int row_number, int col_number)
 {
     Element* _element = Element::create(row_number, col_number);
-    Vec2 _element_location = this->get_element_location(row_number, col_number);
-    _element->setPosition(_element_location);
+    // 获取当前寿司的位置，并初始化内容
+    Vec2 _element_location = this->get_element_location(row_number, col_number);        // 最后需要到达的位置
+    Vec2 _element_location_before = Vec2(_element_location.x, _element_location.y+500); // 最开始存在的位置：根据最后的位置推算
+    // 添加下落到位动作
+    _element->setPosition(_element_location_before);
+    MoveTo* _element_action = MoveTo::create(1, _element_location);
     _element->setAnchorPoint(Vec2(0, 0));
+    _element->runAction(_element_action);
     this->addChild(_element);
+    // 添加至2维数组 (row * row_number + column_number)
+    // 注意行和列对应2维数组的行和列各－1
+    vector_element[_element_row * (row_number-1) + (col_number-1)] = _element;
 }
 
 /*virtual*/ Vec2 HelloWorld::get_element_location(int row_number, int col_number)
@@ -86,4 +111,122 @@ bool HelloWorld::init()
     int x = source_weight + (Element::getContentWidth() * (row_number-1)) + (_element_row_space * (row_number-1));
     int y = source_height + (Element::getContentHigth() * (col_number-1)) + (_element_column_space * (col_number-1));
     return Vec2(x,y);
+}
+
+/*virtual*/ bool HelloWorld::global_touch_on(Touch* t, Event* e)
+{
+    // 获得用户点击的位置
+    if (!_isTouched) {
+        auto location = t->getLocation();
+        // 判断用户是否点击在寿司上
+        touch_element = user_click_sushi(&location);
+        if (touch_element != NULL) {
+            _isTouched = true;
+            log("ok");
+            return true;
+        }else{
+            return false;
+        }
+    }
+    
+    return false;
+}
+
+/*virtual*/ void HelloWorld::global_touch_move(Touch* t, Event* e)
+{
+    // 判断最先决条件
+    if (_isTouched == false || touch_element == NULL) {
+        return;
+    }
+    
+    // 开始进行触发判断
+    // 获取当前元素的 行和列
+    int touch_element_row = touch_element->getROW();
+    int touch_element_col = touch_element->getCOLUMN();
+    
+    // 查询运动趋势是否与其他块接触
+    auto location = t->getLocation();
+    auto element_width_half = touch_element->getContentSize().width / 2;
+    auto element_higth_half = touch_element->getContentSize().height / 2;
+    
+    // 向上
+    Rect new_up_rect = Rect(touch_element->getPositionX(), touch_element->getPositionY()+element_higth_half, touch_element->getContentSize().width, touch_element->getContentSize().height);
+    if (new_up_rect.containsPoint(location)) {
+        int after_touch_col = touch_element_col + 1;
+        if (after_touch_col > 0) {
+            // 获取触发方向的寿司
+            touch_after_element = vector_element[_element_row* (touch_element_row-1) + (after_touch_col-1)];
+        }
+        // 交换寿司
+        this->swap_sushi(touch_element, touch_after_element);
+        return;
+    }
+    // 向下
+    Rect new_down_rect = Rect(touch_element->getPositionX(), touch_element->getPositionY()-element_higth_half, touch_element->getContentSize().width, touch_element->getContentSize().height);
+    if (new_down_rect.containsPoint(location)) {
+        log("down");
+    }
+    // 向左
+    
+    // 向右
+}
+
+/*virtual*/ void HelloWorld::global_touch_end(Touch* t, Event* e)
+{
+    // 重置点击状态等待备用
+    _isTouched = false;
+}
+
+/*virtual*/ Element* HelloWorld::user_click_sushi(Vec2* click_point)
+{
+    Element* _tmp_element;
+    Rect rect = Rect(0, 0, 0, 0);
+    
+    for (int i=1; i<=ELEMENT_COLUMN; i++) {
+        for (int j=1; j<=ELEMENT_ROW; j++) {
+            // 判断2维矩阵中的寿司存在 : 为了节省重复使用矩阵，则声明一个固定的变量
+            _tmp_element = vector_element[_element_row*(i-1) + (j-1)];
+            if (_tmp_element) {
+                rect.origin.x = _tmp_element->getPositionX();
+                rect.origin.y = _tmp_element->getPositionY();
+                rect.size = _tmp_element->getContentSize();
+                if (rect.containsPoint(*click_point)) {
+                    return _tmp_element;
+                }
+            }
+        }
+    }
+    return nullptr;
+}
+
+/*virtual*/ void HelloWorld::swap_sushi(Element* e_before, Element* e_after)
+{
+    _isTouched = false;
+    if (e_before == NULL || e_after == NULL || _isMoved) {
+        return;
+    }
+    
+    // 交换动画前置内容提取
+    Vec2 e_before_position = e_before->getPosition();
+    Vec2 e_after_position = e_after->getPosition();
+    
+    // 简单交换位置(2维数组中)
+    vector_element[_element_row * (e_before->getROW()-1) + (e_before->getCOLUMN()-1)] = e_after;
+    vector_element[_element_row * (e_after->getROW()-1) + (e_after->getCOLUMN()-1)] = e_before;
+    
+    // 交换所有的基本属性(注意使用中间变量)
+    int e_tmp_row = e_before->getROW();
+    int e_tmp_col = e_before->getCOLUMN();
+    e_before->setROW(e_after->getROW());
+    e_before->setCOLUMN(e_after->getCOLUMN());
+    e_after->setROW(e_tmp_row);
+    e_after->setCOLUMN(e_tmp_col);
+
+    // 交换动画执行
+    e_before->runAction(Sequence::create(
+                                         MoveTo::create(0.5, e_after_position),
+                                         NULL));
+    e_after->runAction(Sequence::create(
+                                        MoveTo::create(0.5, e_before_position),
+                                        NULL));
 }
