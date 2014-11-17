@@ -117,8 +117,6 @@ bool HelloWorld::init()
 
 /*virtual*/ bool HelloWorld::global_touch_on(Touch* t, Event* e)
 {
-    log("touch on");
-    log("touch judge -> %d", _isTouched);
     // 获得用户点击的位置
     if (_isTouched) {
         auto location = t->getLocation();
@@ -134,10 +132,6 @@ bool HelloWorld::init()
 
 /*virtual*/ void HelloWorld::global_touch_move(Touch* t, Event* e)
 {
-#pragma mark - 调试打印
-    log("{%f, %f}", t->getLocation().x, t->getLocation().y);
-    log("touch false or true => %d", _isTouched);
-    
     // 判断最先决条件
     if (!_isTouched || touch_element == NULL) {
         return;
@@ -154,9 +148,8 @@ bool HelloWorld::init()
     auto element_higth_half = touch_element->getContentSize().height;
 
     // 向上
-    Rect new_up_rect = Rect(touch_element->getPositionX()-(element_width_half/2), touch_element->getPositionY()+(element_higth_half), touch_element->getContentSize().width, touch_element->getContentSize().height);
+    Rect new_up_rect = Rect(touch_element->getPositionX(), touch_element->getPositionY()+(element_higth_half), touch_element->getContentSize().width, touch_element->getContentSize().height);
     if (new_up_rect.containsPoint(location)) {
-        log("up");
         int after_touch_col = touch_element_col + 1;
         if (after_touch_col > 0) {
             // 获取触发方向的寿司
@@ -167,9 +160,8 @@ bool HelloWorld::init()
         return;
     }
     // 向下
-    Rect new_down_rect = Rect(touch_element->getPositionX()-(element_width_half/2), touch_element->getPositionY()-(element_higth_half), touch_element->getContentSize().width, touch_element->getContentSize().height);
+    Rect new_down_rect = Rect(touch_element->getPositionX(), touch_element->getPositionY()-(element_higth_half), touch_element->getContentSize().width, touch_element->getContentSize().height);
     if (new_down_rect.containsPoint(location)) {
-        log("down");
         int after_touch_col = touch_element_col - 1;
         if (after_touch_col > 0) {
             // 获取触发方向的寿司
@@ -181,9 +173,8 @@ bool HelloWorld::init()
 
     }
     // 向左
-    Rect new_left_rect = Rect(touch_element->getPositionX()-(element_width_half), touch_element->getPositionY()-(element_higth_half/2), touch_element->getContentSize().width, touch_element->getContentSize().height);
+    Rect new_left_rect = Rect(touch_element->getPositionX()-(element_width_half), touch_element->getPositionY(), touch_element->getContentSize().width, touch_element->getContentSize().height);
     if (new_left_rect.containsPoint(location)) {
-        log("left");
         int after_touch_row = touch_element_row - 1;
         if (after_touch_row > 0) {
             // 获取触发方向的寿司
@@ -194,9 +185,8 @@ bool HelloWorld::init()
         return;
     }
     // 向右
-    Rect new_right_rect = Rect(touch_element->getPositionX()+(element_width_half), touch_element->getPositionY()-(element_higth_half/2), touch_element->getContentSize().width, touch_element->getContentSize().height);
+    Rect new_right_rect = Rect(touch_element->getPositionX()+(element_width_half), touch_element->getPositionY(), touch_element->getContentSize().width, touch_element->getContentSize().height);
     if (new_right_rect.containsPoint(location)) {
-        log("right");
         int after_touch_row = touch_element_row + 1;
         if (after_touch_row > 0) {
             // 获取触发方向的寿司
@@ -263,6 +253,12 @@ bool HelloWorld::init()
     e_after->runAction(Sequence::create(
                                         MoveTo::create(0.5, e_before_position),
                                         NULL));
+    
+    // 若要形成交换回来的情况，则需要做如下2点
+    // 1. 纪录开始元素和交换后的元素 各2个
+    // 2. 比较这4个元素是否有含有3个以上的合并状态
+    // 存在： 则合并动画
+    // 不存在：则替换回来，交换取消
 }
 
 /*virtual*/ void HelloWorld::update(float dtime)
@@ -282,9 +278,6 @@ bool HelloWorld::init()
         }
         return;
     }
-    
-    // 判断到没有寿司在执行其他动作的情况下 => _isAction=true;
-//    _isTouched = !_isAction; // 触发可以移动的状态
     
     // 触发状态使用的递归方式
     check_global_sushi();   // 递归移动所有的寿司和检测消失
@@ -320,9 +313,27 @@ bool HelloWorld::init()
                         if (sure_list[each_element]) {
                             // 将寿司从父节点中移除
                             sure_list[each_element]->runAction(Sequence::create(
-                                                                            ScaleTo::create(0.5, 0.0),
+                                                                            FadeTo::create(0.5, 1),
                                                                             CallFuncN::create(CC_CALLBACK_1(HelloWorld::remove_sushi, this)),
                                                                             NULL));
+                            // 光圈效果
+                            auto circleSprite = Sprite::create("circle.png");
+                            addChild(circleSprite, 10);
+                            circleSprite->setPosition(sure_list[each_element]->getPosition()+Vec2(Element::getContentWidth()/2,Element::getContentHigth()/2));
+                            circleSprite->setAnchorPoint(Vec2(0.5, 0.5));
+                            circleSprite->setScale(0);// start size
+                            circleSprite->runAction(Sequence::create(ScaleTo::create(0.5, 1.0),
+                                                                     CallFunc::create(CC_CALLBACK_0(Sprite::removeFromParent, circleSprite)),
+                                                                     NULL));
+                            
+                            // 星星效果
+                            auto particleStars = ParticleSystemQuad::create("stars.plist");
+                            particleStars->setAutoRemoveOnFinish(true);
+                            particleStars->setBlendAdditive(false);
+                            particleStars->setPosition(sure_list[each_element]->getPosition()+Vec2(Element::getContentWidth()/2,Element::getContentHigth()/2));
+                            particleStars->setAnchorPoint(Vec2(0.5, 0.5));
+                            particleStars->setScale(0.3);
+                            addChild(particleStars, 20);
                         }
                     }
                 }
