@@ -4,7 +4,7 @@
 USING_NS_CC;
 
 HelloWorld::HelloWorld() :
-    _isTouched(false),
+    _isTouched(true),
     _isMoved(false),
     _isAction(false),
     touch_element(NULL),
@@ -47,7 +47,7 @@ bool HelloWorld::init()
     // 1. 基础初始化(获取背景图片)
     Sprite* bg = Sprite::create("background_iphone6.png");
     bg->setPosition(gsize.width/2, gsize.height/2);
-    bg->setAnchorPoint(Vec2(0.5,0.5));
+    bg->setAnchorPoint(Vec2(0.5, 0.5));
     this->addChild(bg);
 
     // 2. 预加载资源(所有的寿司单例图)
@@ -118,19 +118,18 @@ bool HelloWorld::init()
 /*virtual*/ bool HelloWorld::global_touch_on(Touch* t, Event* e)
 {
     log("touch on");
+    log("touch judge -> %d", _isTouched);
     // 获得用户点击的位置
-    if (!_isTouched) {
+    if (_isTouched) {
         auto location = t->getLocation();
         // 判断用户是否点击在寿司上
         touch_element = user_click_sushi(&location);
         if (touch_element != NULL) {
-            _isTouched = true;
             return _isTouched;
         }
-        return false;
+        return true;
     }
-    
-    return false;
+    return true;
 }
 
 /*virtual*/ void HelloWorld::global_touch_move(Touch* t, Event* e)
@@ -138,8 +137,9 @@ bool HelloWorld::init()
 #pragma mark - 调试打印
     log("{%f, %f}", t->getLocation().x, t->getLocation().y);
     log("touch false or true => %d", _isTouched);
+    
     // 判断最先决条件
-    if (_isTouched == false || touch_element == NULL) {
+    if (!_isTouched || touch_element == NULL) {
         return;
     }
     
@@ -150,11 +150,11 @@ bool HelloWorld::init()
     
     // 查询运动趋势是否与其他块接触
     auto location = t->getLocation();
-    auto element_width_half = touch_element->getContentSize().width / 2;
-    auto element_higth_half = touch_element->getContentSize().height / 2;
+    auto element_width_half = touch_element->getContentSize().width;
+    auto element_higth_half = touch_element->getContentSize().height;
 
     // 向上
-    Rect new_up_rect = Rect(touch_element->getPositionX(), touch_element->getPositionY()+(element_higth_half*2), touch_element->getContentSize().width, touch_element->getContentSize().height);
+    Rect new_up_rect = Rect(touch_element->getPositionX()-(element_width_half/2), touch_element->getPositionY()+(element_higth_half), touch_element->getContentSize().width, touch_element->getContentSize().height);
     if (new_up_rect.containsPoint(location)) {
         log("up");
         int after_touch_col = touch_element_col + 1;
@@ -167,7 +167,7 @@ bool HelloWorld::init()
         return;
     }
     // 向下
-    Rect new_down_rect = Rect(touch_element->getPositionX(), touch_element->getPositionY()-(element_higth_half*2), touch_element->getContentSize().width, touch_element->getContentSize().height);
+    Rect new_down_rect = Rect(touch_element->getPositionX()-(element_width_half/2), touch_element->getPositionY()-(element_higth_half), touch_element->getContentSize().width, touch_element->getContentSize().height);
     if (new_down_rect.containsPoint(location)) {
         log("down");
         int after_touch_col = touch_element_col - 1;
@@ -181,7 +181,7 @@ bool HelloWorld::init()
 
     }
     // 向左
-    Rect new_left_rect = Rect(touch_element->getPositionX()-(element_width_half*2), touch_element->getPositionY(), touch_element->getContentSize().width, touch_element->getContentSize().height);
+    Rect new_left_rect = Rect(touch_element->getPositionX()-(element_width_half), touch_element->getPositionY()-(element_higth_half/2), touch_element->getContentSize().width, touch_element->getContentSize().height);
     if (new_left_rect.containsPoint(location)) {
         log("left");
         int after_touch_row = touch_element_row - 1;
@@ -194,7 +194,7 @@ bool HelloWorld::init()
         return;
     }
     // 向右
-    Rect new_right_rect = Rect(touch_element->getPositionX()+(element_width_half*2), touch_element->getPositionY(), touch_element->getContentSize().width, touch_element->getContentSize().height);
+    Rect new_right_rect = Rect(touch_element->getPositionX()+(element_width_half), touch_element->getPositionY()-(element_higth_half/2), touch_element->getContentSize().width, touch_element->getContentSize().height);
     if (new_right_rect.containsPoint(location)) {
         log("right");
         int after_touch_row = touch_element_row + 1;
@@ -207,14 +207,10 @@ bool HelloWorld::init()
         return;
     }
 }
-
 /*virtual*/ void HelloWorld::global_touch_end(Touch* t, Event* e)
 {
-    // 重置点击状态等待备用
-    log("touch end");
-    _isTouched = false;
+    _isTouched = true;
 }
-
 /*virtual*/ Element* HelloWorld::user_click_sushi(Vec2* click_point)
 {
     Element* _tmp_element;
@@ -288,7 +284,7 @@ bool HelloWorld::init()
     }
     
     // 判断到没有寿司在执行其他动作的情况下 => _isAction=true;
-    _isTouched = !_isAction; // 触发可以移动的状态
+//    _isTouched = !_isAction; // 触发可以移动的状态
     
     // 触发状态使用的递归方式
     check_global_sushi();   // 递归移动所有的寿司和检测消失

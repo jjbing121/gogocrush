@@ -41,8 +41,7 @@ bool AppDelegate::applicationDidFinishLaunching() {
     auto scene = HelloWorld::createScene();
 
     // add adjust screen comfot
-    glview->setDesignResolutionSize(750.0, 1334.0, ResolutionPolicy::EXACT_FIT);  // iphone6
-//    glview->setDesignResolutionSize(640.0, 960.0, ResolutionPolicy::EXACT_FIT);
+    glview->setDesignResolutionSize(750.0, 1334.0, ResolutionPolicy::SHOW_ALL);  // iphone6
     // add content scale factor to
     // director->setContentScaleFactor(1334.0/750.0);
     // add new folder to search

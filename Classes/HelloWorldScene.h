@@ -22,7 +22,7 @@ private:
     int source_height;        // 原点长像素位
     Element** vector_element; // 精灵保存的2维数组
 
-    bool _isTouched;          // 当前被点击的状态 : 默认初始化为false
+    bool _isTouched;          // 当前被点击的状态 : 默认初始化为true
     bool _isMoved;            // 当前寿司是否被移动过
     bool _isAction;           // 当前是否存在有单一寿司在执行动作判断阀值
     Element* touch_element;       // 当前被点击到的精灵 : 默认初始化为NULL
