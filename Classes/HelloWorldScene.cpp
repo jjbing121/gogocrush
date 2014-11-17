@@ -117,6 +117,7 @@ bool HelloWorld::init()
 
 /*virtual*/ bool HelloWorld::global_touch_on(Touch* t, Event* e)
 {
+    log("touch on");
     // 获得用户点击的位置
     if (!_isTouched) {
         auto location = t->getLocation();
@@ -124,10 +125,9 @@ bool HelloWorld::init()
         touch_element = user_click_sushi(&location);
         if (touch_element != NULL) {
             _isTouched = true;
-            return true;
-        }else{
-            return false;
+            return _isTouched;
         }
+        return false;
     }
     
     return false;
@@ -135,6 +135,9 @@ bool HelloWorld::init()
 
 /*virtual*/ void HelloWorld::global_touch_move(Touch* t, Event* e)
 {
+#pragma mark - 调试打印
+    log("{%f, %f}", t->getLocation().x, t->getLocation().y);
+    log("touch false or true => %d", _isTouched);
     // 判断最先决条件
     if (_isTouched == false || touch_element == NULL) {
         return;
@@ -149,10 +152,11 @@ bool HelloWorld::init()
     auto location = t->getLocation();
     auto element_width_half = touch_element->getContentSize().width / 2;
     auto element_higth_half = touch_element->getContentSize().height / 2;
-    
+
     // 向上
-    Rect new_up_rect = Rect(touch_element->getPositionX(), touch_element->getPositionY()+element_higth_half, touch_element->getContentSize().width, touch_element->getContentSize().height);
+    Rect new_up_rect = Rect(touch_element->getPositionX(), touch_element->getPositionY()+(element_higth_half*2), touch_element->getContentSize().width, touch_element->getContentSize().height);
     if (new_up_rect.containsPoint(location)) {
+        log("up");
         int after_touch_col = touch_element_col + 1;
         if (after_touch_col > 0) {
             // 获取触发方向的寿司
@@ -163,18 +167,51 @@ bool HelloWorld::init()
         return;
     }
     // 向下
-    Rect new_down_rect = Rect(touch_element->getPositionX(), touch_element->getPositionY()-element_higth_half, touch_element->getContentSize().width, touch_element->getContentSize().height);
+    Rect new_down_rect = Rect(touch_element->getPositionX(), touch_element->getPositionY()-(element_higth_half*2), touch_element->getContentSize().width, touch_element->getContentSize().height);
     if (new_down_rect.containsPoint(location)) {
         log("down");
+        int after_touch_col = touch_element_col - 1;
+        if (after_touch_col > 0) {
+            // 获取触发方向的寿司
+            touch_after_element = vector_element[_element_row* (touch_element_row-1) + (after_touch_col-1)];
+        }
+        // 交换寿司
+        this->swap_sushi(touch_element, touch_after_element);
+        return;
+
     }
     // 向左
-    
+    Rect new_left_rect = Rect(touch_element->getPositionX()-(element_width_half*2), touch_element->getPositionY(), touch_element->getContentSize().width, touch_element->getContentSize().height);
+    if (new_left_rect.containsPoint(location)) {
+        log("left");
+        int after_touch_row = touch_element_row - 1;
+        if (after_touch_row > 0) {
+            // 获取触发方向的寿司
+            touch_after_element = vector_element[_element_row* (after_touch_row-1) + (touch_element_col-1)];
+        }
+        // 交换寿司
+        this->swap_sushi(touch_element, touch_after_element);
+        return;
+    }
     // 向右
+    Rect new_right_rect = Rect(touch_element->getPositionX()+(element_width_half*2), touch_element->getPositionY(), touch_element->getContentSize().width, touch_element->getContentSize().height);
+    if (new_right_rect.containsPoint(location)) {
+        log("right");
+        int after_touch_row = touch_element_row + 1;
+        if (after_touch_row > 0) {
+            // 获取触发方向的寿司
+            touch_after_element = vector_element[_element_row* (after_touch_row-1) + (touch_element_col-1)];
+        }
+        // 交换寿司
+        this->swap_sushi(touch_element, touch_after_element);
+        return;
+    }
 }
 
 /*virtual*/ void HelloWorld::global_touch_end(Touch* t, Event* e)
 {
     // 重置点击状态等待备用
+    log("touch end");
     _isTouched = false;
 }
 
@@ -255,7 +292,8 @@ bool HelloWorld::init()
     
     // 触发状态使用的递归方式
     check_global_sushi();   // 递归移动所有的寿司和检测消失
-    filling_sushi();        // 填充所有寿司位置
+    filling_sushi();        // 消除所有相似寿司
+    update_new_sushi();     // 补充所有寿司
     return;
 }
 
@@ -306,7 +344,7 @@ bool HelloWorld::init()
             if (!tmp_element) {
                 // 向上查找最近一个存在的元素
                 Element* nearest_element = this->filling_up(i, j);
-                // 开始补偿机制
+                // 开始消除机制
                 makeup_sushi(nearest_element, i, j);
             }
         }
@@ -326,13 +364,10 @@ bool HelloWorld::init()
 
 /*virtual*/ void HelloWorld::makeup_sushi(Element* exist, int miss_row, int miss_col)
 {
-    log("miss => {%d, %d}", miss_row, miss_col);
-    
     bool get_flush = false;
     Element* exist_makeup;      // 本函数临时变量
     int exist_row;              // 原始函数变量的行(临时保存)
     int exist_col;              // 原始函数变量的列(临时保存)
-    
     
     // 从判断到的寿司开始
     if (exist) { // 已经存在的寿司并且被查询到
@@ -343,25 +378,9 @@ bool HelloWorld::init()
         exist_makeup->stopAllActions();
         MoveTo* mvto = MoveTo::create(0.5, get_element_location(miss_row, miss_col));
         exist_makeup->runAction(mvto);
-        
-//    }else{  // 未存在的寿司(已经到矩阵顶端了->则随机生成)
-//        get_flush = true;
-//        log("ensure => {%d, %d}", miss_row, miss_col);
-//        exist_makeup = Element::create(miss_row, miss_col);
-//        Vec2 new_exist_end_location = get_element_location(miss_row, miss_col);          // 最后需要到达的位置
-//        Vec2 new_exist_location = Vec2(new_exist_end_location.x, new_exist_end_location.y+500); // 随机生成的位置
-//        exist_makeup->setPosition(new_exist_location);
-//        exist_makeup->setAnchorPoint(Vec2(0, 0));
-//        MoveTo* mvto = MoveTo::create(1, new_exist_end_location);
-//        exist_makeup->stopAllActions();
-//        exist_makeup->runAction(mvto);
     } else {
         return;
     }
-    
-    // 将移动前的内容置空
-//    if (get_flush == false)
-    
     
     // 将移动后的内容更改对应值
     vector_element[_element_row * (miss_row-1) + (miss_col-1)] = exist_makeup;
@@ -374,6 +393,32 @@ bool HelloWorld::init()
         this->addChild(exist_makeup);
 }
 
+/*virtual*/ void HelloWorld::update_new_sushi()
+{
+    for (int i=1; i<=ELEMENT_COLUMN; i++) {
+        for (int j=1; j<=ELEMENT_ROW; j++) {
+            // 全局消失的寿司位置
+            if (!vector_element[_element_row * (i-1) + (j-1)]) {
+                Element* update_element = Element::create(i, j);
+                // 获取当前寿司的位置，并初始化内容
+                Vec2 update_end_location = get_element_location(i, j);                                // 最后需要到达的位置
+                Vec2 update_before_location = Vec2(update_end_location.x, update_end_location.y+500); // 最开始存在的位置：根据最后的位置推算
+                // 添加下落到位动作
+                update_element->setPosition(update_before_location);
+                MoveTo* update_action = MoveTo::create(1, update_end_location);
+                update_element->setAnchorPoint(Vec2(0, 0));
+                update_element->stopAllActions();
+                update_element->runAction(update_action);
+                // 重新增加入场景
+                this->addChild(update_element);
+                // 重新加载到2维数组
+                vector_element[_element_row * (i-1) + (j-1)] = update_element;
+            }
+        }
+    }
+}
+
+#warning 数据bug
 /*virtual*/ void HelloWorld::row_check_sushi(Element* check_element, std::vector<Element*>& col_list)
 {
     // 主动放入第一个元素

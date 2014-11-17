@@ -62,7 +62,8 @@ public:
     virtual void row_check_sushi(Element*, std::vector<Element*>&);     // 向上检查
     virtual void remove_sushi(Node*);                                   // 从父节点中移除这个子节点
     virtual Element* filling_up(int row_number, int col_number);        // 向上查找最近的一个元素位置
-    virtual void makeup_sushi(Element*, int miss_row, int miss_col);    // 补偿机制
+    virtual void makeup_sushi(Element*, int miss_row, int miss_col);    // 删除合并机制
+    virtual void update_new_sushi();                                    // 全局检测，并且安排新寿司进入
 };
 
 #endif // __HELLOWORLD_SCENE_H__
