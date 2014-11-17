@@ -57,8 +57,12 @@ public:
 public:
     virtual void update(float dtime) override;
     virtual void check_global_sushi();          // 检查全局是否有需要消除的状态
+    virtual void filling_sushi();               // 检查全局需要补充的位置
     virtual void col_check_sushi(Element*, std::vector<Element*>&);     // 向右检查
     virtual void row_check_sushi(Element*, std::vector<Element*>&);     // 向上检查
+    virtual void remove_sushi(Node*);                                   // 从父节点中移除这个子节点
+    virtual Element* filling_up(int row_number, int col_number);        // 向上查找最近的一个元素位置
+    virtual void makeup_sushi(Element*, int miss_row, int miss_col);    // 补偿机制
 };
 
 #endif // __HELLOWORLD_SCENE_H__

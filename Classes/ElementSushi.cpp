@@ -54,6 +54,7 @@ Element* Element::create(int row, int column, int normal_pic/*=0*/)
     }
     
     // 图片在未放置前，基础坐标都是0，只有位置的2维数组
+    log("picname => %s", element_normal[new_element->e_index]);
     new_element->initWithSpriteFrameName(element_normal[new_element->e_index]);
     new_element->autorelease();
     return new_element;

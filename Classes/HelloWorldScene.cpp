@@ -124,7 +124,6 @@ bool HelloWorld::init()
         touch_element = user_click_sushi(&location);
         if (touch_element != NULL) {
             _isTouched = true;
-            log("ok");
             return true;
         }else{
             return false;
@@ -255,7 +254,8 @@ bool HelloWorld::init()
     _isTouched = !_isAction; // 触发可以移动的状态
     
     // 触发状态使用的递归方式
-    check_global_sushi();
+    check_global_sushi();   // 递归移动所有的寿司和检测消失
+    filling_sushi();        // 填充所有寿司位置
     return;
 }
 
@@ -266,25 +266,112 @@ bool HelloWorld::init()
             // 单一元素只向右和向上匹配
             Element* check_element = vector_element[_element_row * (i-1) + (j-1)];
             
-            // 向右检测
-            std::vector<Element*> col_list;
-            this->col_check_sushi(check_element, col_list);
-            
-            // 向上检测
-            std::vector<Element*> row_list;
-            this->row_check_sushi(check_element, row_list);
-            
-            // 判断哪个方向是正确的方向 -> 保存在sure_list中
-            std::vector<Element*> &sure_list = col_list.size() > row_list.size() ? col_list : row_list;
-            // 根据判断来进行消除动作
-            if (sure_list.size() >= 3) {
-                for (int each_element = 0; each_element<sure_list.size(); each_element++) {
-//                    Element* tmp_element = sure_list[each_element];
-                    log("{%d, %d => %d}", sure_list[each_element]->getROW(), sure_list[each_element]->getCOLUMN(), _element_row*(sure_list[each_element]->getROW()-1) + (sure_list[each_element]->getCOLUMN()-1));
+            if (check_element) {
+
+                // 向右检测
+                std::vector<Element*> col_list;
+                this->col_check_sushi(check_element, col_list);
+                
+                // 向上检测
+                std::vector<Element*> row_list;
+                this->row_check_sushi(check_element, row_list);
+                
+                // 判断哪个方向是正确的方向 -> 保存在sure_list中
+                std::vector<Element*> &sure_list = col_list.size() > row_list.size() ? col_list : row_list;
+                // 根据判断来进行消除动作
+                if (sure_list.size() >= 3) {
+                    // 注意删除过的需要进行重复判断
+                    
+                    for (int each_element = 0; each_element<sure_list.size(); each_element++) {
+                        if (sure_list[each_element]) {
+                            // 将寿司从父节点中移除
+                            sure_list[each_element]->runAction(Sequence::create(
+                                                                            ScaleTo::create(0.5, 0.0),
+                                                                            CallFuncN::create(CC_CALLBACK_1(HelloWorld::remove_sushi, this)),
+                                                                            NULL));
+                        }
+                    }
                 }
             }
         }
     }
+}
+
+/*virtual*/ void HelloWorld::filling_sushi()
+{
+    for (int i=1; i<=ELEMENT_COLUMN; i++) {
+        for (int j=1; j<=ELEMENT_ROW; j++) {
+            // 从原点开始扫描
+            Element* tmp_element = vector_element[_element_row * (i-1) + (j-1)];
+            if (!tmp_element) {
+                // 向上查找最近一个存在的元素
+                Element* nearest_element = this->filling_up(i, j);
+                // 开始补偿机制
+                makeup_sushi(nearest_element, i, j);
+            }
+        }
+    }
+}
+
+/*virtual*/ Element* HelloWorld::filling_up(int row_number, int col_number)
+{
+    for (int i=col_number; i<=_element_row; i++) {
+        if (vector_element[_element_row * (row_number-1) + (i-1)]) {
+            Element* thiselement = vector_element[_element_row * (row_number-1) + (i-1)];
+            return thiselement;
+        }
+    }
+    return NULL;
+}
+
+/*virtual*/ void HelloWorld::makeup_sushi(Element* exist, int miss_row, int miss_col)
+{
+    log("miss => {%d, %d}", miss_row, miss_col);
+    
+    bool get_flush = false;
+    Element* exist_makeup;      // 本函数临时变量
+    int exist_row;              // 原始函数变量的行(临时保存)
+    int exist_col;              // 原始函数变量的列(临时保存)
+    
+    
+    // 从判断到的寿司开始
+    if (exist) { // 已经存在的寿司并且被查询到
+        exist_row = exist->getROW();
+        exist_col = exist->getCOLUMN();
+        exist_makeup = exist;
+        
+        exist_makeup->stopAllActions();
+        MoveTo* mvto = MoveTo::create(0.5, get_element_location(miss_row, miss_col));
+        exist_makeup->runAction(mvto);
+        
+//    }else{  // 未存在的寿司(已经到矩阵顶端了->则随机生成)
+//        get_flush = true;
+//        log("ensure => {%d, %d}", miss_row, miss_col);
+//        exist_makeup = Element::create(miss_row, miss_col);
+//        Vec2 new_exist_end_location = get_element_location(miss_row, miss_col);          // 最后需要到达的位置
+//        Vec2 new_exist_location = Vec2(new_exist_end_location.x, new_exist_end_location.y+500); // 随机生成的位置
+//        exist_makeup->setPosition(new_exist_location);
+//        exist_makeup->setAnchorPoint(Vec2(0, 0));
+//        MoveTo* mvto = MoveTo::create(1, new_exist_end_location);
+//        exist_makeup->stopAllActions();
+//        exist_makeup->runAction(mvto);
+    } else {
+        return;
+    }
+    
+    // 将移动前的内容置空
+//    if (get_flush == false)
+    
+    
+    // 将移动后的内容更改对应值
+    vector_element[_element_row * (miss_row-1) + (miss_col-1)] = exist_makeup;
+    exist_makeup->setROW(miss_row);
+    exist_makeup->setCOLUMN(miss_col);
+    // 移动的内容置空
+    vector_element[_element_row * (exist_row-1) + (exist_col-1)] = NULL;
+    // 将移动后新增精灵增加入场景
+    if (get_flush == true)
+        this->addChild(exist_makeup);
 }
 
 /*virtual*/ void HelloWorld::row_check_sushi(Element* check_element, std::vector<Element*>& col_list)
@@ -325,4 +412,13 @@ bool HelloWorld::init()
         else
             return;
     }
+}
+
+/*virtual*/ void HelloWorld::remove_sushi(Node* node)
+{
+    Element* remove_sushi_ = (Element*)node;
+    // 从2维数组中删除
+    vector_element[_element_row * (remove_sushi_->getROW()-1) + (remove_sushi_->getCOLUMN()-1)] = NULL;
+    // 从父类中删除
+    remove_sushi_->removeFromParent();
 }
