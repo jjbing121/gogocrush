@@ -72,7 +72,6 @@ bool HelloWorld::init()
     // 5. 整体初始化这个2维矩阵
     init_vec2_element();
     scheduleUpdate();
-//    schedule(schedule_selector(HelloWorld::update), 0.1);
     
     // 6. 初始化所有的触摸动作
     auto listener = EventListenerTouchOneByOne::create();
@@ -322,11 +321,45 @@ bool HelloWorld::init()
                     // 注意删除过的需要进行重复判断
                     for (int each_element = 0; each_element<sure_list.size(); each_element++) {
                         if (sure_list[each_element]) {
-                            // 将寿司从父节点中移除
-                            sure_list[each_element]->runAction(Sequence::create(
+                            // 将寿司从父节点中移除 - 普通消除
+                            log("check the sure_list eeeee -> %d", sure_list[each_element]->getSPETYPE());
+                            if (sure_list[each_element]->getSPETYPE() == 0) {
+                                sure_list[each_element]->runAction(Sequence::create(
+                                                                                    FadeTo::create(0.5, 1),
+                                                                                    CallFuncN::create(CC_CALLBACK_1(HelloWorld::remove_sushi, this)),
+                                                                                    NULL));
+                            }
+                            // 特殊消除1 ：水平消除
+                            else if (sure_list[each_element]->getSPETYPE() == 1) {
+                                this->CleanByLevel(Vec2(sure_list[each_element]->getPositionX()+(Element::getContentWidth()/2),
+                                                        sure_list[each_element]->getPositionY()+(Element::getContentWidth()/2)));
+                                // 找到所有的本行寿司
+                                int cols = sure_list[each_element]->getCOLUMN();
+                                // 清理这些寿司
+                                for (int ci=1; ci<=_element_column; ci++) {
+                                    Element* element_row = vector_element[_element_row*(ci-1)+(cols-1)];
+                                    element_row->runAction(Sequence::create(
                                                                             FadeTo::create(0.5, 1),
                                                                             CallFuncN::create(CC_CALLBACK_1(HelloWorld::remove_sushi, this)),
                                                                             NULL));
+                                }
+                            }
+                            // 特殊消除2 ：垂直消除
+                            else if (sure_list[each_element]->getSPETYPE() == 2) {
+                                this->CleanByVeritial(Vec2(sure_list[each_element]->getPositionX()+(Element::getContentWidth()/2),
+                                                           sure_list[each_element]->getPositionY()+(Element::getContentHigth()/2)));
+                                // 找到所有的本列寿司
+                                int rows = sure_list[each_element]->getROW();
+                                // 清理这些寿司
+                                for (int di=1; di<=_element_row; di++) {
+                                    Element* element_col = vector_element[_element_row*(rows-1)+(di-1)];
+                                    element_col->runAction(Sequence::create(
+                                                                            FadeTo::create(0.5, 1),
+                                                                            CallFuncN::create(CC_CALLBACK_1(HelloWorld::remove_sushi, this)),
+                                                                            NULL));
+
+                                }
+                            }
                             // 光圈效果
                             auto circleSprite = Sprite::create("circle.png");
                             addChild(circleSprite, 10);
@@ -529,4 +562,63 @@ bool HelloWorld::init()
     vector_element[_element_row * (remove_sushi_->getROW()-1) + (remove_sushi_->getCOLUMN()-1)] = NULL;
     // 从父类中删除
     remove_sushi_->removeFromParent();
+}
+
+#pragma mark - 爆炸效果(带有效果的新单位合并)
+void HelloWorld::CleanByLevel(Vec2 point)
+{
+    Size size = Director::getInstance()->getWinSize();
+    float scaleX = 4 ;
+    float scaleY = 0.7 ;
+    float time = 0.3;
+    Vec2 startPosition = point;
+    float speed = 0.6f;
+    
+    auto colorSpriteRight = Sprite::create("colorHRight.png");
+    addChild(colorSpriteRight, 10);
+    Point endPosition1 = Point(point.x - size.width, point.y);
+    colorSpriteRight->setPosition(startPosition);
+    colorSpriteRight->runAction(Sequence::create(ScaleTo::create(time, scaleX, scaleY),
+                                                 MoveTo::create(speed, endPosition1),
+                                                 CallFunc::create(CC_CALLBACK_0(Sprite::removeFromParent, colorSpriteRight)),
+                                                 NULL));
+    
+    auto colorSpriteLeft = Sprite::create("colorHLeft.png");
+    addChild(colorSpriteLeft, 10);
+    Point endPosition2 = Point(point.x + size.width, point.y);
+    colorSpriteLeft->setPosition(startPosition);
+    colorSpriteLeft->runAction(Sequence::create(ScaleTo::create(time, scaleX, scaleY),
+                                                MoveTo::create(speed, endPosition2),
+                                                CallFunc::create(CC_CALLBACK_0(Sprite::removeFromParent, colorSpriteLeft)),
+                                                NULL));
+    
+    
+}
+
+void HelloWorld::CleanByVeritial(Vec2 point)
+{
+    Size size = Director::getInstance()->getWinSize();
+    float scaleY = 4 ;
+    float scaleX = 0.7 ;
+    float time = 0.3;
+    Vec2 startPosition = point;
+    float speed = 0.6f;
+    
+    auto colorSpriteDown = Sprite::create("colorVDown.png");
+    addChild(colorSpriteDown, 10);
+    Point endPosition1 = Point(point.x , point.y - size.height);
+    colorSpriteDown->setPosition(startPosition);
+    colorSpriteDown->runAction(Sequence::create(ScaleTo::create(time, scaleX, scaleY),
+                                                MoveTo::create(speed, endPosition1),
+                                                CallFunc::create(CC_CALLBACK_0(Sprite::removeFromParent, colorSpriteDown)),
+                                                NULL));
+    
+    auto colorSpriteUp = Sprite::create("colorVUp.png");
+    addChild(colorSpriteUp, 10);
+    Point endPosition2 = Point(point.x , point.y + size.height);
+    colorSpriteUp->setPosition(startPosition);
+    colorSpriteUp->runAction(Sequence::create(ScaleTo::create(time, scaleX, scaleY),
+                                              MoveTo::create(speed, endPosition2),
+                                              CallFunc::create(CC_CALLBACK_0(Sprite::removeFromParent, colorSpriteUp)),
+                                              NULL));
 }

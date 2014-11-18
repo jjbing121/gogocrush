@@ -45,7 +45,7 @@ public:
     virtual void init_vec2_element(void);                                     // 循环入口
     virtual void create_each_doaction(int row_number, int col_number);        // 进行初始化操作
     virtual Vec2 get_element_location(int row_number, int col_number);        // 根据行号和列号找到定位点
-    
+
 // 全局触发动作
 public:
     virtual bool global_touch_on(Touch* t, Event* e);
@@ -65,6 +65,11 @@ public:
     virtual Element* filling_up(int row_number, int col_number);        // 向上查找最近的一个元素位置
     virtual void makeup_sushi(Element*, int miss_row, int miss_col);    // 删除合并机制
     virtual void update_new_sushi();                                    // 全局检测，并且安排新寿司进入
+    
+// 全局消除效果
+public:
+    virtual void CleanByLevel(Vec2 point);                                    // 水平合并消除效果(消除整行)
+    virtual void CleanByVeritial(Vec2 point);                                 // 垂直合并消除效果(消除整列)
 };
 
 #endif // __HELLOWORLD_SCENE_H__

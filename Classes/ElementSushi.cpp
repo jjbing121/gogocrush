@@ -67,15 +67,12 @@ Element* Element::createSpecial(int row, int column, bool direct, int index_numb
     new_element->e_column = column;
     new_element->e_index = index_number;
     
-    log("direct => %d", direct);
     // 水平图标
     if (!direct) {
-        log("水平触发 : %s", element_level[new_element->e_index]);
         new_element->e_special = 1;
         new_element->initWithSpriteFrameName(element_level[new_element->e_index]);
     // 垂直图标
     } else {
-        log("垂直触发 : %s", element_vertical[new_element->e_index]);
         new_element->e_special = 2;
         new_element->initWithSpriteFrameName(element_vertical[new_element->e_index]);
     }
