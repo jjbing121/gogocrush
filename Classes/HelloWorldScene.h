@@ -18,6 +18,7 @@ private:
     int _element_column_space;
     
 private:
+    Sprite* bg;               // 层背景图
     int source_weight;        // 原点宽像素位
     int source_height;        // 原点长像素位
     Element** vector_element; // 精灵保存的2维数组

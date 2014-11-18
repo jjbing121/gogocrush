@@ -32,7 +32,7 @@ bool AppDelegate::applicationDidFinishLaunching() {
     }
 
     // turn on display FPS
-    director->setDisplayStats(true);
+    director->setDisplayStats(false);
 
     // set FPS. the default value is 1.0/60 if you don't call this
     director->setAnimationInterval(1.0 / 60);
@@ -41,8 +41,10 @@ bool AppDelegate::applicationDidFinishLaunching() {
     auto scene = HelloWorld::createScene();
 
     // add adjust screen comfot
-    glview->setDesignResolutionSize(750.0, 1334.0, ResolutionPolicy::SHOW_ALL);  // iphone6
-//    glview->setDesignResolutionSize(640.0, 1136.0, ResolutionPolicy::SHOW_ALL); // iphone5s
+//    glview->setDesignResolutionSize(1242.0, 2208.0, ResolutionPolicy::SHOW_ALL);    // iphone6s
+    glview->setDesignResolutionSize(750.0, 1334.0, ResolutionPolicy::SHOW_ALL);     // iphone6
+//    glview->setDesignResolutionSize(640.0, 1136.0, ResolutionPolicy::SHOW_ALL);     // iphone5s
+//    glview->setDesignResolutionSize(640.0, 960.0, ResolutionPolicy::SHOW_ALL);      // iphone4s
     // add content scale factor to
     // director->setContentScaleFactor(1334.0/750.0);
     // add new folder to search

@@ -46,8 +46,11 @@ bool HelloWorld::init()
     Size gsize = Director::getInstance()->getVisibleSize();
 
     // 1. 基础初始化(获取背景图片)
-    Sprite* bg = Sprite::create("background_iphone6.png");  // iphone6
-//    Sprite* bg = Sprite::create("background.png");        // iphone5s
+//      bg = Sprite::create("background_iphone6s.png");    // iphone6s
+      bg = Sprite::create("background_iphone6.png");     // iphone6
+//      bg = Sprite::create("background.png");             // iphone5s
+//      bg = Sprite::create("background_iphone4s.png");    // iphone4s
+
     bg->setPosition(gsize.width/2, gsize.height/2);
     bg->setAnchorPoint(Vec2(0.5, 0.5));
     this->addChild(bg);
@@ -322,7 +325,6 @@ bool HelloWorld::init()
                     for (int each_element = 0; each_element<sure_list.size(); each_element++) {
                         if (sure_list[each_element]) {
                             // 将寿司从父节点中移除 - 普通消除
-                            log("check the sure_list eeeee -> %d", sure_list[each_element]->getSPETYPE());
                             if (sure_list[each_element]->getSPETYPE() == 0) {
                                 sure_list[each_element]->runAction(Sequence::create(
                                                                                     FadeTo::create(0.5, 1),

@@ -38,6 +38,8 @@ static const char* element_vertical[ELEMENT_SORT] = {
 
 Element* Element::create(int row, int column, int normal_pic/*=0*/)
 {
+    Size gsize = Director::getInstance()->getVisibleSize();
+    float scale = gsize.width/gsize.height;
     Element* new_element = new Element();
     
     new_element->e_row = row;
@@ -54,6 +56,7 @@ Element* Element::create(int row, int column, int normal_pic/*=0*/)
     }
     
     // 图片在未放置前，基础坐标都是0，只有位置的2维数组
+    new_element->setContentSize(Size(new_element->getContentSize().width * scale, new_element->getContentSize().height * scale));
     new_element->initWithSpriteFrameName(element_normal[new_element->e_index]);
     new_element->autorelease();
     return new_element;
@@ -61,11 +64,14 @@ Element* Element::create(int row, int column, int normal_pic/*=0*/)
 
 Element* Element::createSpecial(int row, int column, bool direct, int index_number)
 {
+    Size gsize = Director::getInstance()->getVisibleSize();
+    float scale = gsize.width/gsize.height;
     Element* new_element = new Element();
     
     new_element->e_row = row;
     new_element->e_column = column;
     new_element->e_index = index_number;
+    new_element->setContentSize(Size(new_element->getContentSize().width * scale, new_element->getContentSize().height * scale));
     
     // 水平图标
     if (!direct) {
