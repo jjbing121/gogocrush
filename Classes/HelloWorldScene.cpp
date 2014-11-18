@@ -7,6 +7,7 @@ HelloWorld::HelloWorld() :
     _isTouched(true),
     _isMoved(false),
     _isAction(false),
+    _isSpecialAction(false),
     touch_element(NULL),
     touch_after_element(NULL)
 {
@@ -34,7 +35,7 @@ Scene* HelloWorld::createScene()
     // return the scene
     return scene;
 }
-
+#pragma mark - 整体场景初始化
 // on "init" you need to initialize your instance
 bool HelloWorld::init()
 {
@@ -45,7 +46,8 @@ bool HelloWorld::init()
     Size gsize = Director::getInstance()->getVisibleSize();
 
     // 1. 基础初始化(获取背景图片)
-    Sprite* bg = Sprite::create("background_iphone6.png");
+    Sprite* bg = Sprite::create("background_iphone6.png");  // iphone6
+//    Sprite* bg = Sprite::create("background.png");        // iphone5s
     bg->setPosition(gsize.width/2, gsize.height/2);
     bg->setAnchorPoint(Vec2(0.5, 0.5));
     this->addChild(bg);
@@ -70,6 +72,7 @@ bool HelloWorld::init()
     // 5. 整体初始化这个2维矩阵
     init_vec2_element();
     scheduleUpdate();
+//    schedule(schedule_selector(HelloWorld::update), 0.1);
     
     // 6. 初始化所有的触摸动作
     auto listener = EventListenerTouchOneByOne::create();
@@ -115,6 +118,7 @@ bool HelloWorld::init()
     return Vec2(x,y);
 }
 
+#pragma mark - 整体触摸动作实现
 /*virtual*/ bool HelloWorld::global_touch_on(Touch* t, Event* e)
 {
     // 获得用户点击的位置
@@ -147,6 +151,8 @@ bool HelloWorld::init()
     auto element_width_half = touch_element->getContentSize().width;
     auto element_higth_half = touch_element->getContentSize().height;
 
+#pragma mark - 手指移动(上下左右)
+    
     // 向上
     Rect new_up_rect = Rect(touch_element->getPositionX(), touch_element->getPositionY()+(element_higth_half), touch_element->getContentSize().width, touch_element->getContentSize().height);
     if (new_up_rect.containsPoint(location)) {
@@ -253,7 +259,7 @@ bool HelloWorld::init()
     e_after->runAction(Sequence::create(
                                         MoveTo::create(0.5, e_before_position),
                                         NULL));
-    
+
     // 若要形成交换回来的情况，则需要做如下2点
     // 1. 纪录开始元素和交换后的元素 各2个
     // 2. 比较这4个元素是否有含有3个以上的合并状态
@@ -261,6 +267,7 @@ bool HelloWorld::init()
     // 不存在：则替换回来，交换取消
 }
 
+#pragma mark - 整体定时器实现
 /*virtual*/ void HelloWorld::update(float dtime)
 {
     if (!_isAction) {
@@ -288,6 +295,10 @@ bool HelloWorld::init()
 
 /*virtual*/ void HelloWorld::check_global_sushi()
 {
+    if (_isSpecialAction == true) {
+        return;
+    }
+    
     for (int i=1; i<=ELEMENT_COLUMN; i++) {
         for (int j=1; j<=ELEMENT_ROW; j++) {
             // 单一元素只向右和向上匹配
@@ -306,9 +317,9 @@ bool HelloWorld::init()
                 // 判断哪个方向是正确的方向 -> 保存在sure_list中
                 std::vector<Element*> &sure_list = col_list.size() > row_list.size() ? col_list : row_list;
                 // 根据判断来进行消除动作
-                if (sure_list.size() >= 3) {
+                // 三个元素进行合并消除操作
+                if (sure_list.size() == 3) {
                     // 注意删除过的需要进行重复判断
-                    
                     for (int each_element = 0; each_element<sure_list.size(); each_element++) {
                         if (sure_list[each_element]) {
                             // 将寿司从父节点中移除
@@ -337,6 +348,41 @@ bool HelloWorld::init()
                         }
                     }
                 }
+                
+                // 4个以上的合并
+                else if (sure_list.size() >= 4)
+                {
+                    _isSpecialAction = true;    // 开始进行元素补充，不可以进行同时的其他操作
+                    bool vertical_or_level = false; // 默认false为水平, true为垂直
+                    
+                    if (sure_list[0]->getROW() == sure_list[sure_list.size()-1]->getROW())
+                        vertical_or_level = true;
+
+                    // 随机选取一个点: 基本使用最左边和最下面多点来实现
+                    // 来作为4个点的生成点 : random_reserved
+                    int random_sure = 0;
+                    Element* random_reserverd = Element::createSpecial(sure_list[random_sure]->getROW(), sure_list[random_sure]->getCOLUMN(), !vertical_or_level, sure_list[random_sure]->getINDEX());
+                    
+                    // 将所有寿司从父节点中移除(除了第一个)
+                    for (int j = 1; j<sure_list.size(); j++) {
+                        if (sure_list[j]) {
+                            sure_list[j]->runAction(Sequence::create(
+                                                                    CallFuncN::create(CC_CALLBACK_1(HelloWorld::remove_sushi, this)),
+                                                                    NULL));
+                        }
+                    }
+                    // 将第一个寿司进行替换操作 (先从场景中移除，再替换2维数组)
+                    sure_list[random_sure]->stopAllActions();
+                    sure_list[random_sure]->removeFromParent();
+                    
+                    Vec2 special_location = this->get_element_location(random_reserverd->getROW(), random_reserverd->getCOLUMN());
+                    random_reserverd->setPosition(special_location);
+                    random_reserverd->setAnchorPoint(Vec2(0, 0));
+                    this->addChild(random_reserverd);
+                    vector_element[_element_row * (random_reserverd->getROW()-1) + (random_reserverd->getCOLUMN()-1)] = random_reserverd;
+                    
+                    _isSpecialAction = false;    // 补充完成后，释放即可
+                }
             }
         }
     }
@@ -344,6 +390,9 @@ bool HelloWorld::init()
 
 /*virtual*/ void HelloWorld::filling_sushi()
 {
+    if (_isSpecialAction == true) {
+        return;
+    }
     for (int i=1; i<=ELEMENT_COLUMN; i++) {
         for (int j=1; j<=ELEMENT_ROW; j++) {
             // 从原点开始扫描
@@ -371,6 +420,10 @@ bool HelloWorld::init()
 
 /*virtual*/ void HelloWorld::makeup_sushi(Element* exist, int miss_row, int miss_col)
 {
+    if (_isSpecialAction == true) {
+        return;
+    }
+    
     bool get_flush = false;
     Element* exist_makeup;      // 本函数临时变量
     int exist_row;              // 原始函数变量的行(临时保存)
@@ -402,6 +455,10 @@ bool HelloWorld::init()
 
 /*virtual*/ void HelloWorld::update_new_sushi()
 {
+    if (_isSpecialAction == true) {
+        return;
+    }
+    
     for (int i=1; i<=ELEMENT_COLUMN; i++) {
         for (int j=1; j<=ELEMENT_ROW; j++) {
             // 全局消失的寿司位置
@@ -425,7 +482,6 @@ bool HelloWorld::init()
     }
 }
 
-#warning 数据bug
 /*virtual*/ void HelloWorld::row_check_sushi(Element* check_element, std::vector<Element*>& col_list)
 {
     // 主动放入第一个元素

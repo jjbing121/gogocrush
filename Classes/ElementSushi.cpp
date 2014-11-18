@@ -19,21 +19,21 @@ static const char* element_normal[ELEMENT_SORT] = {
 };
 // 水平合成精灵配图文件名称
 static const char* element_level[ELEMENT_SORT] = {
-    "sushi_1v.png",
-    "sushi_2v.png",
-    "sushi_3v.png",
-    "sushi_4v.png",
-    "sushi_5v.png",
-    "sushi_6v.png"
-};
-// 垂直合成精灵配图文件名称
-static const char* element_vertical[ELEMENT_SORT] = {
     "sushi_1h.png",
     "sushi_2h.png",
     "sushi_3h.png",
     "sushi_4h.png",
     "sushi_5h.png",
     "sushi_6h.png"
+};
+// 垂直合成精灵配图文件名称
+static const char* element_vertical[ELEMENT_SORT] = {
+    "sushi_1v.png",
+    "sushi_2v.png",
+    "sushi_3v.png",
+    "sushi_4v.png",
+    "sushi_5v.png",
+    "sushi_6v.png"
 };
 
 Element* Element::create(int row, int column, int normal_pic/*=0*/)
@@ -55,6 +55,30 @@ Element* Element::create(int row, int column, int normal_pic/*=0*/)
     
     // 图片在未放置前，基础坐标都是0，只有位置的2维数组
     new_element->initWithSpriteFrameName(element_normal[new_element->e_index]);
+    new_element->autorelease();
+    return new_element;
+}
+
+Element* Element::createSpecial(int row, int column, bool direct, int index_number)
+{
+    Element* new_element = new Element();
+    
+    new_element->e_row = row;
+    new_element->e_column = column;
+    new_element->e_index = index_number;
+    
+    log("direct => %d", direct);
+    // 水平图标
+    if (!direct) {
+        log("水平触发 : %s", element_level[new_element->e_index]);
+        new_element->e_special = 1;
+        new_element->initWithSpriteFrameName(element_level[new_element->e_index]);
+    // 垂直图标
+    } else {
+        log("垂直触发 : %s", element_vertical[new_element->e_index]);
+        new_element->e_special = 2;
+        new_element->initWithSpriteFrameName(element_vertical[new_element->e_index]);
+    }
     new_element->autorelease();
     return new_element;
 }

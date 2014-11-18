@@ -42,6 +42,7 @@ bool AppDelegate::applicationDidFinishLaunching() {
 
     // add adjust screen comfot
     glview->setDesignResolutionSize(750.0, 1334.0, ResolutionPolicy::SHOW_ALL);  // iphone6
+//    glview->setDesignResolutionSize(640.0, 1136.0, ResolutionPolicy::SHOW_ALL); // iphone5s
     // add content scale factor to
     // director->setContentScaleFactor(1334.0/750.0);
     // add new folder to search
