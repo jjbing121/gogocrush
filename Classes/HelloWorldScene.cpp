@@ -49,7 +49,7 @@ bool HelloWorld::init()
     // 1. 基础初始化(获取背景图片)
 //      bg = Sprite::create("background_iphone6s.png");    // iphone6s
 //      bg = Sprite::create("background_iphone6.png");     // iphone6
-      bg = Sprite::create("background.png");             // iphone5s
+      bg = Sprite::create("background_iphone5.png");             // iphone5s
 //      bg = Sprite::create("background_iphone4s.png");    // iphone4s
 
     bg->setPosition(gsize.width/2, gsize.height/2);

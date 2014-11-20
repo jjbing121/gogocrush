@@ -8,6 +8,8 @@
 
 #include "MenuScene.h"
 #include "HelloWorldScene.h"
+#include "selfdefine.h"
+#include "LeadBoard.h"
 
 /*virtual*/ bool MenuScene::init()
 {
@@ -18,7 +20,7 @@
     global_menu_size = Director::getInstance()->getVisibleSize();
     
     // 添加背景
-    Sprite* menu_bg = Sprite::create("login_iphone4.png");
+    Sprite* menu_bg = Sprite::create("login_iphone5.png");
     menu_bg->setPosition(Vec2(global_menu_size.width/2, global_menu_size.height/2));
     menu_bg->setAnchorPoint(Vec2(0.5, 0.5));
     this->addChild(menu_bg);
@@ -31,6 +33,11 @@
     // 添加背景音乐
     CocosDenshion::SimpleAudioEngine::getInstance()->playBackgroundMusic("bgmusic.mp3");
     
+    // 添加唯一设备识别信息
+    int device_random_name = UserDefault::getInstance()->getIntegerForKey("device_random_name", 0);
+    if (device_random_name == 0) {
+        UserDefault::getInstance()->setIntegerForKey("device_random_name", arc4random() % 1000000000);
+    }
     
 #pragma mark - 开始游戏
     // 添加开始游戏按键
@@ -104,21 +111,25 @@ cocos2d::Scene* MenuScene::createMenuScene()
 //        checkbutton_start->runAction(hide_action);
 //        checkbutton_end->runAction(show_action);
         CocosDenshion::SimpleAudioEngine::getInstance()->playEffect("buttonclick.wav");
- 
-        // 排行榜事件实现
-        HttpRequest* request = new HttpRequest();
-        std::string send_url = "http://118.194.49.4:51999/UploadCommitIndex";
-        const  char* postData = "dGltZXN0YW1wPTEzOTAwMTM5MDAmZGF0YT17InVzZXJfc2NvcmUiOiAiNTEwMCIsICJ1c2VyX2lkIjogIjg5OTAxMjMyIn0mYXV0aD1lYjJhYTMwODk4NjZlN2VmYWJmZWVhNDBkNGQ2MmY2NQ==";
         
-        request->setUrl(send_url.c_str());
-        request->setRequestType(HttpRequest::Type::POST);
-        request->setRequestData(postData,strlen(postData));
-        request->setTag("PostUserUploadScore");
-        
-        // 发送方式
-        request->setResponseCallback(this, httpresponse_selector(MenuScene::onCheckResponse));
-        HttpClient::getInstance()->send(request);
-        request->release();
+//        // 合并内容
+//        Self_Define::Leader_Data getdata;
+//        
+//        // 排行榜事件实现
+//        HttpRequest* request = new HttpRequest();
+//        std::string send_url = "http://118.194.49.4:51999/UploadCommitIndex";
+//        std::string postData = getdata.get_data("1390013900", 5500, "89901232", "UploadCommitIndex");
+//        
+//        request->setUrl(send_url.c_str());
+//        request->setRequestType(HttpRequest::Type::POST);
+//        request->setRequestData(postData.c_str(),strlen(postData.c_str()));
+//        request->setTag("PostUserUploadScore");
+//        
+//        // 发送方式
+//        request->setResponseCallback(this, httpresponse_selector(MenuScene::onCheckResponse));
+//        HttpClient::getInstance()->send(request);
+//        request->release();
+        Director::getInstance()->replaceScene(LeaderScene::createLeaderScene());
         
         return true;
     }
@@ -137,6 +148,9 @@ cocos2d::Scene* MenuScene::createMenuScene()
         ss << (*buffer)[i];
     }
     // 做相应处理
-    log("return ss => %s", ss.str().c_str());
+    Self_Define::Leader_Data getdata;
+    int incode = getdata.get_incode(ss.str().c_str());
+    log("incode => %d", incode);
+    
     return;
 }

@@ -9,6 +9,7 @@
 #include "ResultScene.h"
 #include "HelloWorldScene.h"
 #include "MenuScene.h"
+#include "LeadBoard.h"
 
 cocos2d::Scene* ResultScene::createScene(std::string getScore)
 {
@@ -39,6 +40,7 @@ cocos2d::Scene* ResultScene::createScene(std::string getScore)
     a->setPosition(result_global_size.width/2, result_global_size.height/2);
     a->setAnchorPoint(Vec2(0.5, 0.5));
     this->addChild(a);
+    
     // 重设记分板内容
     score_result = Label::createWithSystemFont(score_pass, "Courier", 70);
     score_result->setPosition(result_global_size.width/2, result_global_size.height/2);
@@ -143,7 +145,7 @@ ResultScene* ResultScene::create(std::string getScore)
         if (p_next->getBoundingBox().containsPoint(t->getLocation())) {
             this->stopAllActions();
             this->removeAllChildren();
-            Director::getInstance()->end();
+            Director::getInstance()->replaceScene(LeaderScene::createLeaderScene());
         }
     }
 }

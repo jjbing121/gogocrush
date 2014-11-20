@@ -17,6 +17,7 @@ using namespace cocos2d;
 using namespace CocosDenshion;
 using namespace network;
 
+
 class MenuScene : public Layer
 {
 private:
