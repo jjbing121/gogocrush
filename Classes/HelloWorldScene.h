@@ -30,6 +30,9 @@ private:
     Element* touch_element;       // 当前被点击到的精灵 : 默认初始化为NULL
     Element* touch_after_element; // 当前被移动的精灵 : 默认初始化为NULL
     
+    ProgressTimer* ptimer;    // 计时器封装
+    Label* countdown;         // 计时器倒计时封装
+    Label* pointboard;        // 分数板
 public:
     HelloWorld();
     virtual~ HelloWorld();
@@ -66,6 +69,10 @@ public:
     virtual Element* filling_up(int row_number, int col_number);        // 向上查找最近的一个元素位置
     virtual void makeup_sushi(Element*, int miss_row, int miss_col);    // 删除合并机制
     virtual void update_new_sushi();                                    // 全局检测，并且安排新寿司进入
+    
+    virtual void process_sixty_seconds(float dtime);    // 全局加载定时器
+    virtual void setCountDown(float dtime);             // 全局加载计数器
+    virtual void setPointBoard(int point);              // 全局加载积分板分数增加
     
 // 全局消除效果
 public:

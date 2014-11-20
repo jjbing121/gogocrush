@@ -1,5 +1,6 @@
 #include "HelloWorldScene.h"
 #include "ElementSushi.h"
+#include "ResultScene.h"
 
 USING_NS_CC;
 
@@ -47,17 +48,18 @@ bool HelloWorld::init()
 
     // 1. 基础初始化(获取背景图片)
 //      bg = Sprite::create("background_iphone6s.png");    // iphone6s
-      bg = Sprite::create("background_iphone6.png");     // iphone6
-//      bg = Sprite::create("background.png");             // iphone5s
+//      bg = Sprite::create("background_iphone6.png");     // iphone6
+      bg = Sprite::create("background.png");             // iphone5s
 //      bg = Sprite::create("background_iphone4s.png");    // iphone4s
 
     bg->setPosition(gsize.width/2, gsize.height/2);
     bg->setAnchorPoint(Vec2(0.5, 0.5));
     this->addChild(bg);
-
+    
     // 2. 预加载资源(所有的寿司单例图)
     SpriteFrameCache* sushiCache = SpriteFrameCache::getInstance();
-    sushiCache->addSpriteFramesWithFile("allsushi.plist", "allsushi.png");
+    sushiCache->addSpriteFramesWithFile("allvegetables.plist", "allvegetables.png");
+    CocosDenshion::SimpleAudioEngine::getInstance()->playBackgroundMusic("bgmusic.mp3");
     
     // 3. 定义起始点(外部引用的时候需要优先赋值)
     _element_row          = ELEMENT_ROW;
@@ -74,7 +76,6 @@ bool HelloWorld::init()
     
     // 5. 整体初始化这个2维矩阵
     init_vec2_element();
-    scheduleUpdate();
     
     // 6. 初始化所有的触摸动作
     auto listener = EventListenerTouchOneByOne::create();
@@ -83,6 +84,42 @@ bool HelloWorld::init()
     listener->onTouchMoved = CC_CALLBACK_2(HelloWorld::global_touch_move, this);
     listener->onTouchEnded = CC_CALLBACK_2(HelloWorld::global_touch_end, this);
     Director::getInstance()->getEventDispatcher()->addEventListenerWithSceneGraphPriority(listener, this);
+    
+    // 7. 初始化全局定时器
+    // 7.1 进度条
+    Sprite* processbar_str = Sprite::create("processbutton_start.png");
+    Sprite* processbar_end = Sprite::create("processbutton_after.png");
+    
+    processbar_str->setPosition(gsize.width/2, 70);
+    processbar_str->setAnchorPoint(Vec2(0.5, 0.5));
+    ptimer = ProgressTimer::create(processbar_end);
+    ptimer->setType(ProgressTimer::Type::BAR);
+    ptimer->setMidpoint(Vec2(0, 0.5));
+    ptimer->setBarChangeRate(Vec2(1, 0));
+    ptimer->setPercentage(0);
+    ptimer->setPosition(gsize.width/2, 70);
+    ptimer->setAnchorPoint(Vec2(0.5, 0.5));
+    
+    // 7.2 倒计时
+    countdown = Label::createWithSystemFont("0", "Courier", 50);
+    countdown->setPosition(gsize.width/2+(processbar_str->getContentSize().width/2)+40, 70);
+    countdown->setAnchorPoint(Vec2(0.5,0.5));
+    countdown->setTextColor(Color4B(100, 0, 0, 150));
+    
+    this->addChild(processbar_str, 20);
+    this->addChild(ptimer, 21);
+    this->addChild(countdown);
+    
+    // 8. 记分板
+    pointboard = Label::createWithSystemFont("0", "Courier", 50);
+    pointboard->setPosition(gsize.width-80, gsize.height-60);
+    pointboard->setAnchorPoint(Vec2(0.5,0.5));
+    pointboard->setTextColor(Color4B(0, 0, 0, 0));
+    this->addChild(pointboard);
+    
+    // 整体定时器设置
+    scheduleUpdate();
+    schedule(schedule_selector(HelloWorld::process_sixty_seconds), 1);
     return true;
     
 }
@@ -129,6 +166,7 @@ bool HelloWorld::init()
         // 判断用户是否点击在寿司上
         touch_element = user_click_sushi(&location);
         if (touch_element != NULL) {
+            CocosDenshion::SimpleAudioEngine::getInstance()->playEffect("effectvoice.wav");
             return _isTouched;
         }
         return true;
@@ -320,6 +358,10 @@ bool HelloWorld::init()
                 std::vector<Element*> &sure_list = col_list.size() > row_list.size() ? col_list : row_list;
                 // 根据判断来进行消除动作
                 // 三个元素进行合并消除操作
+                // 积分原则：
+                //          普通元素消除1个共计10分, 一次消除3个共计30分 = (10*3) = 30分
+                //          水平消除1个共计30分, 一次消除一行共计6个 ＝ (5*10+30) = 80分
+                //          垂直消除1个共计20分, 一次消除一列共计11个 = (10*10+20) = 120分
                 if (sure_list.size() == 3) {
                     // 注意删除过的需要进行重复判断
                     for (int each_element = 0; each_element<sure_list.size(); each_element++) {
@@ -330,6 +372,7 @@ bool HelloWorld::init()
                                                                                     FadeTo::create(0.5, 1),
                                                                                     CallFuncN::create(CC_CALLBACK_1(HelloWorld::remove_sushi, this)),
                                                                                     NULL));
+                                this->setPointBoard(1);
                             }
                             // 特殊消除1 ：水平消除
                             else if (sure_list[each_element]->getSPETYPE() == 1) {
@@ -344,7 +387,9 @@ bool HelloWorld::init()
                                                                             FadeTo::create(0.5, 1),
                                                                             CallFuncN::create(CC_CALLBACK_1(HelloWorld::remove_sushi, this)),
                                                                             NULL));
+                                    this->setPointBoard(1);
                                 }
+                                this->setPointBoard(15);
                             }
                             // 特殊消除2 ：垂直消除
                             else if (sure_list[each_element]->getSPETYPE() == 2) {
@@ -359,8 +404,9 @@ bool HelloWorld::init()
                                                                             FadeTo::create(0.5, 1),
                                                                             CallFuncN::create(CC_CALLBACK_1(HelloWorld::remove_sushi, this)),
                                                                             NULL));
-
+                                    this->setPointBoard(1);
                                 }
+                                this->setPointBoard(10);
                             }
                             // 光圈效果
                             auto circleSprite = Sprite::create("circle.png");
@@ -405,6 +451,7 @@ bool HelloWorld::init()
                                                                     CallFuncN::create(CC_CALLBACK_1(HelloWorld::remove_sushi, this)),
                                                                     NULL));
                         }
+                        this->setPointBoard(1);
                     }
                     // 将第一个寿司进行替换操作 (先从场景中移除，再替换2维数组)
                     sure_list[random_sure]->stopAllActions();
@@ -623,4 +670,42 @@ void HelloWorld::CleanByVeritial(Vec2 point)
                                               MoveTo::create(speed, endPosition2),
                                               CallFunc::create(CC_CALLBACK_0(Sprite::removeFromParent, colorSpriteUp)),
                                               NULL));
+}
+
+/*virtual*/ void HelloWorld::process_sixty_seconds(float dtime)
+{
+    float percent_get = ptimer->getPercentage();
+    percent_get += 2;
+    
+    if (percent_get <= 100){
+        // 计时器增加
+        ptimer->setPercentage(percent_get);
+        // 计数器增加
+        this->setCountDown(1);
+    }
+    else
+    {
+        // 跳转到结束页面
+        std::string get_atlast_point = pointboard->getString();
+        this->removeChild(pointboard);
+        Director::getInstance()->replaceScene(ResultScene::createScene(get_atlast_point));
+    }
+}
+
+void HelloWorld::setCountDown(float dtime)
+{
+    int tmp_count_down = atoi(countdown->getString().c_str());
+    char add_count_down[6];
+    memset(add_count_down, 0, 6);
+    sprintf(add_count_down, "%d", (int)(tmp_count_down+dtime));
+    countdown->setString(add_count_down);
+}
+
+/*virtual*/ void HelloWorld::setPointBoard(int point)
+{
+    int tmp_point = atoi(pointboard->getString().c_str());
+    char point_add[6];
+    memset(point_add, 0, 6);
+    sprintf(point_add, "%d", (int)(tmp_point+point));
+    pointboard->setString(point_add);
 }

@@ -1,5 +1,6 @@
 #include "AppDelegate.h"
-#include "HelloWorldScene.h"
+
+#include "MenuScene.h"
 
 USING_NS_CC;
 
@@ -38,20 +39,19 @@ bool AppDelegate::applicationDidFinishLaunching() {
     director->setAnimationInterval(1.0 / 60);
 
     // create a scene. it's an autorelease object
-    auto scene = HelloWorld::createScene();
+    auto scene = MenuScene::createMenuScene();
 
     // add adjust screen comfot
 //    glview->setDesignResolutionSize(1242.0, 2208.0, ResolutionPolicy::SHOW_ALL);    // iphone6s
-    glview->setDesignResolutionSize(750.0, 1334.0, ResolutionPolicy::SHOW_ALL);     // iphone6
-//    glview->setDesignResolutionSize(640.0, 1136.0, ResolutionPolicy::SHOW_ALL);     // iphone5s
+//    glview->setDesignResolutionSize(750.0, 1334.0, ResolutionPolicy::SHOW_ALL);     // iphone6
+    glview->setDesignResolutionSize(640.0, 1136.0, ResolutionPolicy::SHOW_ALL);     // iphone5s
 //    glview->setDesignResolutionSize(640.0, 960.0, ResolutionPolicy::SHOW_ALL);      // iphone4s
     // add content scale factor to
     // director->setContentScaleFactor(1334.0/750.0);
     // add new folder to search
     std::vector<std::string> searchPath;
     searchPath.push_back("bgandeffect");
-    searchPath.push_back("element");
-
+    searchPath.push_back("elements");
     
     // run
     director->runWithScene(scene);

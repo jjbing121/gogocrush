@@ -10,30 +10,30 @@
 
 // 普通精灵配图文件名称
 static const char* element_normal[ELEMENT_SORT] = {
-    "sushi_1n.png",
-    "sushi_2n.png",
-    "sushi_3n.png",
-    "sushi_4n.png",
-    "sushi_5n.png",
-    "sushi_6n.png"
+    "broccoli.png",
+    "carrot.png",
+    "mushroom.png",
+    "bell_pepper.png",
+    "strawberry.png",
+    "sugar_snap.png"
 };
 // 水平合成精灵配图文件名称
 static const char* element_level[ELEMENT_SORT] = {
-    "sushi_1h.png",
-    "sushi_2h.png",
-    "sushi_3h.png",
-    "sushi_4h.png",
-    "sushi_5h.png",
-    "sushi_6h.png"
+    "broccoli_H.png",
+    "carrot_H.png",
+    "mushroom_H.png",
+    "bell_pepper_H.png",
+    "strawberry_H.png",
+    "sugar_snap_H.png"
 };
 // 垂直合成精灵配图文件名称
 static const char* element_vertical[ELEMENT_SORT] = {
-    "sushi_1v.png",
-    "sushi_2v.png",
-    "sushi_3v.png",
-    "sushi_4v.png",
-    "sushi_5v.png",
-    "sushi_6v.png"
+    "broccoli_V.png",
+    "carrot_V.png",
+    "mushroom_V.png",
+    "bell_pepper_V.png",
+    "strawberry_V.png",
+    "sugar_snap_V.png"
 };
 
 Element* Element::create(int row, int column, int normal_pic/*=0*/)
