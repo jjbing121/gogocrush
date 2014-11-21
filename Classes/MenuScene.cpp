@@ -28,8 +28,7 @@
     // 所有背景音乐预加载
     CocosDenshion::SimpleAudioEngine::getInstance()->preloadBackgroundMusic("bgmusic.mp3");
     CocosDenshion::SimpleAudioEngine::getInstance()->setBackgroundMusicVolume(0.5);
-    CocosDenshion::SimpleAudioEngine::getInstance()->preloadEffect("effectbutton.wav");
-    CocosDenshion::SimpleAudioEngine::getInstance()->preloadEffect("effectvoice.wav");
+    CocosDenshion::SimpleAudioEngine::getInstance()->preloadEffect("buttonclick.wav");
     // 添加背景音乐
     CocosDenshion::SimpleAudioEngine::getInstance()->playBackgroundMusic("bgmusic.mp3");
     
@@ -106,29 +105,12 @@ cocos2d::Scene* MenuScene::createMenuScene()
 /*virtual*/ bool MenuScene::onCheckStartClick(Touch* t, Event* e)
 {
     if (checkbutton_start->getBoundingBox().containsPoint(t->getLocation())) {
-//        Show* show_action = Show::create();
-//        Hide* hide_action = Hide::create();
-//        checkbutton_start->runAction(hide_action);
-//        checkbutton_end->runAction(show_action);
+        Show* show_action = Show::create();
+        Hide* hide_action = Hide::create();
+        checkbutton_start->runAction(hide_action);
+        checkbutton_end->runAction(show_action);
         CocosDenshion::SimpleAudioEngine::getInstance()->playEffect("buttonclick.wav");
-        
-//        // 合并内容
-//        Self_Define::Leader_Data getdata;
-//        
-//        // 排行榜事件实现
-//        HttpRequest* request = new HttpRequest();
-//        std::string send_url = "http://118.194.49.4:51999/UploadCommitIndex";
-//        std::string postData = getdata.get_data("1390013900", 5500, "89901232", "UploadCommitIndex");
-//        
-//        request->setUrl(send_url.c_str());
-//        request->setRequestType(HttpRequest::Type::POST);
-//        request->setRequestData(postData.c_str(),strlen(postData.c_str()));
-//        request->setTag("PostUserUploadScore");
-//        
-//        // 发送方式
-//        request->setResponseCallback(this, httpresponse_selector(MenuScene::onCheckResponse));
-//        HttpClient::getInstance()->send(request);
-//        request->release();
+
         Director::getInstance()->replaceScene(LeaderScene::createLeaderScene());
         
         return true;
@@ -136,21 +118,3 @@ cocos2d::Scene* MenuScene::createMenuScene()
     return false;
 }
 
-/*virtual*/ void MenuScene::onCheckResponse(HttpClient* client, HttpResponse* response)
-{
-    if(!response || !response->isSucceed())
-        return;
-    
-    // 获取响应中的内容
-    std::vector<char>* buffer = response->getResponseData();
-    std::stringstream ss;
-    for(int i=0;i<buffer->size();i++) {
-        ss << (*buffer)[i];
-    }
-    // 做相应处理
-    Self_Define::Leader_Data getdata;
-    int incode = getdata.get_incode(ss.str().c_str());
-    log("incode => %d", incode);
-    
-    return;
-}

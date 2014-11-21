@@ -37,7 +37,6 @@ public:
 public:
     virtual bool onMenuStartClick(Touch* t, Event* e);  // 开始游戏按键点击检测
     virtual bool onCheckStartClick(Touch* t, Event* e); // 查看排行榜按键点击检测
-    virtual void onCheckResponse(HttpClient* client, HttpResponse* response); // 查看排行榜返回值
 };
 
 #endif /* defined(__gogocrush__MenuScene__) */

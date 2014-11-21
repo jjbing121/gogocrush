@@ -11,9 +11,11 @@
 
 #include "cocos2d.h"
 #include <SimpleAudioEngine.h>
+#include "network/HttpClient.h"
 
 using namespace cocos2d;
 using namespace CocosDenshion;
+using namespace network;
 
 class ResultScene : public cocos2d::Layer
 {
@@ -38,6 +40,8 @@ public:
     virtual bool ReturnMenu(Touch *t, Event *e);
     
     virtual bool EndGame(Touch *t, Event *e);
+    
+    virtual void onCheckResponse(HttpClient* client, HttpResponse* response);       // 调用http回调事件
 };
 
 #endif /* defined(__PlaneDemo__ResultScene__) */

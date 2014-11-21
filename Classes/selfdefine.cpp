@@ -69,6 +69,10 @@ std::string Leader_Data::get_leader_all()
 {
     std::string returnbuffer;
     int user_device_id = UserDefault::getInstance()->getIntegerForKey("device_random_name");
+    char user_device_name[20];
+    memset(user_device_name, 0, 20);
+    sprintf(user_device_name, "%d", user_device_id);
+    
     std::string timestamp = "1390013900";
     std::string interface = "UploadCommitSearch";
     
@@ -78,10 +82,8 @@ std::string Leader_Data::get_leader_all()
     StringBuffer buffer;
     rapidjson::Writer<StringBuffer> writer(buffer);
     
-    
-    
     // combine data -> {user_id} -> buffer
-    document.AddMember("user_id", user_device_id, allocator);
+    document.AddMember("user_id", user_device_name, allocator);
     document.Accept(writer);
     
     // all data string
@@ -105,4 +107,68 @@ std::string Leader_Data::get_leader_all()
     free(result);
     
     return returnbuffer;
+}
+
+std::vector< std::map<std::string, std::string> > Leader_Data::get_leader_detail(const char* input_data)
+{
+    log("input_data => %s", input_data);
+    // return result
+    std::vector< std::map<std::string, std::string> > result;
+    
+    rapidjson::Document d;
+    d.Parse<0>(input_data);
+    
+    // 判断到接收的内容是否有错
+    if (d.HasParseError()) {
+        return result;
+    }
+    // 判断接受code是否有问题
+    if ( get_incode(input_data) != 200 ) {
+        return result;
+    }
+    
+    // 正式分析内容
+    if ( d.IsObject() && d.HasMember("dataObject")) {
+        // 解析第一层 dataObject
+        rapidjson::Value &dataObject = d["dataObject"];
+        if (dataObject.IsObject() && dataObject.HasMember("details")) {
+            // 解析第二层 details
+            rapidjson::Value &detail = dataObject["details"];
+            if (detail.IsArray()) {
+                
+                // 实际分析内容
+                for (int i = 0; i<detail.Size(); i++) {
+                    std::map<std::string, std::string> tmp_user;
+                    
+                    // 获取每一项内容
+                    rapidjson::Value &tmp = detail[i];
+                    rapidjson::Document tinydic;
+                    tinydic.Parse<0>(tmp.GetString());
+                    
+                    // 实际的解析每一项内容
+                    // 解析排行榜
+                    if (tinydic.IsObject() && tinydic.HasMember("rank")) {
+                        tmp_user["rank"] = tinydic["rank"].GetString();
+                    }
+                    if (tinydic.IsObject() && tinydic.HasMember("tmp_user_id")) {
+                         tmp_user["tmp_user_id"] = tinydic["tmp_user_id"].GetString();
+                    }
+                    if (tinydic.IsObject() && tinydic.HasMember("tmp_user_score")) {
+                        tmp_user["tmp_user_score"] = tinydic["tmp_user_score"].GetString();
+                    }
+                    // 解析用户自身
+                    if (tinydic.IsObject() && tinydic.HasMember("self_id")) {
+                        tmp_user["self_id"] = tinydic["self_id"].GetString();
+                    }
+                    if (tinydic.IsObject() && tinydic.HasMember("self_rank")) {
+                        tmp_user["self_rank"] = tinydic["self_rank"].GetString();
+                    }
+                    result.push_back(tmp_user);
+                }
+                return result;
+            }
+        }
+
+    }
+    return result;
 }

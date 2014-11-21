@@ -25,14 +25,17 @@ namespace Self_Define {
         Leader_Data() {};               // No-op initialized
         virtual ~Leader_Data() {};      // No-op destructor
         
-        /* 获得服务端的执行返回值 */
+        /* 获得服务端的执行返回值 <通用> */
         int get_incode(const char*);
         
-        /* 用户上传积分 */
+        /* 用户上传积分 : 上传内容处理 */
         std::string get_data(std::string, int, std::string, std::string);
         
-        /* 用户获取最新排名情况 */
+        /* 用户获取最新排名情况 : 上传内容处理 */
         std::string get_leader_all();
+        
+        /* 用户获取最新排名情况 : 返回内容处理 */
+        std::vector< std::map<std::string, std::string> > get_leader_detail(const char*);
     };
 };
 

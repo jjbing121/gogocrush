@@ -25,6 +25,14 @@ private:
     Size leader_global_size;
     Sprite* p_left;             // 返回首页按键
     
+    Label* pointboard;          // 自身最高分
+    Label* pointqueue;          // 自身最高排名
+    
+    Label* First_Name;        // 第一名
+    Label* Second_Name;       // 第二名
+    Label* Third_Name;        // 第三名
+    Label* Forth_Name;        // 第四名
+    Label* Fifth_Name;        // 第五名
 public:
     static cocos2d::Scene* createLeaderScene();
     

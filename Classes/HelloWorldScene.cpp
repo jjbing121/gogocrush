@@ -59,6 +59,7 @@ bool HelloWorld::init()
     // 2. 预加载资源(所有的寿司单例图)
     SpriteFrameCache* sushiCache = SpriteFrameCache::getInstance();
     sushiCache->addSpriteFramesWithFile("allvegetables.plist", "allvegetables.png");
+    
     CocosDenshion::SimpleAudioEngine::getInstance()->playBackgroundMusic("bgmusic.mp3");
     
     // 3. 定义起始点(外部引用的时候需要优先赋值)
@@ -675,6 +676,7 @@ void HelloWorld::CleanByVeritial(Vec2 point)
 /*virtual*/ void HelloWorld::process_sixty_seconds(float dtime)
 {
     float percent_get = ptimer->getPercentage();
+    
     percent_get += 2;
     
     if (percent_get <= 100){
